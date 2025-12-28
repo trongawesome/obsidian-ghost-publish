@@ -1,94 +1,25 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-import { SettingsProp, ContentProp, DataProp } from "./../types/index";
-import { MarkdownView, Notice, requestUrl } from "obsidian";
-import { sign } from "jsonwebtoken";
-
-const matter = require("gray-matter");
-const MarkdownIt = require("markdown-it");
-
-const md = new MarkdownIt();
-const version = "v4";
-
-const contentPost = (frontmatter: ContentProp, data: DataProp) => ({
-	posts: [
-		{
-			...frontmatter,
-			html: md.render(data.content),
-		},
-	],
-});
+import { SettingsProp } from "./../types/index";
+import { MarkdownView, Notice } from "obsidian";
+import { publishSinglePost } from "./publishSinglePost";
 
 export const publishPost = async (
 	view: MarkdownView,
 	settings: SettingsProp
 ) => {
-	// Ghost Url and Admin API key
-	const key = settings.adminToken;
-	if (key.includes(":")) {
-	const [id, secret] = key.split(":");
-
-	// Create the token (including decoding secret)
-	const token = sign({}, Buffer.from(secret, "hex"), {
-		keyid: id,
-		algorithm: "HS256",
-		expiresIn: "5m",
-		audience: `/${version}/admin/`,
-	});
-
-	// get frontmatter
-	const noteFile = view.app.workspace.getActiveFile();
-	// @ts-ignore
-	const metaMatter = app.metadataCache.getFileCache(noteFile).frontmatter;
-	const data = matter(view.getViewData());
-
-	const frontmatter = {
-		title: metaMatter?.title || view.file.basename,
-		tags: metaMatter?.tags || [],
-		featured: metaMatter?.featured || false,
-		status: metaMatter?.published ? "published" : "draft",
-		excerpt: metaMatter?.excerpt || undefined,
-		feature_image: metaMatter?.feature_image || undefined,
-	};
-	try{
-	const post = JSON.stringify(contentPost(frontmatter, data))
-	if (settings.debug == true) {
-		console.log("Request: " + post)
-	}
-	const result = await requestUrl({
-		url: `${settings.url}/ghost/api/${version}/admin/posts/?source=html`,
-		method: "POST",
-		contentType: "application/json",
-		headers: {
-			"Access-Control-Allow-Methods": "POST",
-			"Content-Type": "application/json;charset=utf-8",
-			Authorization: `Ghost ${token}`,
-		},
-		body: post
-	})
-
-	const json = result.json;
-	
-	if (settings.debug == true) {
-		console.log(JSON.stringify(json))
+	const file = view.app.workspace.getActiveFile();
+	if (!file) {
+		new Notice("No file is open");
+		return;
 	}
 
-	if (json?.posts) {
+	const result = await publishSinglePost(file, settings, view.app);
+
+	// Show notices (existing UX)
+	if (result.success) {
 		new Notice(
-			`"${json?.posts?.[0]?.title}" has been ${json?.posts?.[0]?.status} successful!`
+			`"${result.title}" has been ${result.status} successful!`
 		);
 	} else {
-		new Notice(`${json.errors[0].context || json.errors[0].message}`);
-		new Notice(
-			`${json.errors[0]?.details[0].message} - ${json.errors[0]?.details[0].params.allowedValues}`
-		);
+		new Notice(result.error || "An error occurred while publishing");
 	}
-
-	return json;
-} catch (error: any) {
-	new Notice(`Couldn't connect to the Ghost API. Is the API URL and Admin API Key correct?
-
-${error.name}: ${error.message}`)
-}}
-else {
-	new Notice("Error: Ghost API Key is invalid.")
-}};
+};

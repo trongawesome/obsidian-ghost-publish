@@ -3,6 +3,7 @@ import { MarkdownFileInfo, MarkdownView, Notice, Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, SettingsProp } from "./types/index";
 import { SettingTab } from "./settingTab";
 import { publishPost } from "./methods/publishPost";
+import { publishFolder } from "./methods/publishFolder";
 export default class GhostPublish extends Plugin {
 	settings: SettingsProp;
 
@@ -27,7 +28,7 @@ export default class GhostPublish extends Plugin {
 		// 2. Run the by command + P
 		this.addCommand({
 			id: "publish",
-			name: "Send to Ghost",
+			name: "Publish to Ghost",
 			editorCallback: (_, view: MarkdownView | MarkdownFileInfo) => {
 				if (!(view instanceof MarkdownView)) {
 					new Notice(
@@ -37,9 +38,21 @@ export default class GhostPublish extends Plugin {
 				}
 				publishPost(view, this.settings);
 			},
+		});
 
+		this.addCommand({
+			id: "publish-folder",
+			name: "Publish Folder to Ghost",
+			editorCallback: (_, view: MarkdownView | MarkdownFileInfo) => {
+				if (!(view instanceof MarkdownView)) {
+					new Notice(
+						"You must open a note in the folder you want to publish."
+					);
+					return;
+				}
+				publishFolder(view.app, this.settings);
 			},
-	);
+		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SettingTab(this.app, this));

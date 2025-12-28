@@ -22,3 +22,18 @@ export interface ContentProp {
 export interface DataProp {
 	content: string;
 }
+
+export interface PublishResult {
+	success: boolean;
+	fileName: string;
+	title?: string;
+	status?: "published" | "draft";
+	error?: string;
+}
+
+export interface BatchPublishSummary {
+	total: number;
+	successful: number;
+	failed: number;
+	results: PublishResult[];
+}

@@ -1,9 +1,9 @@
 {
-	"id": "send-to-ghost",
-	"name": "Send to Ghost",
+	"id": "ghost-publish",
+	"name": "Ghost Publish",
 	"version": "1.0.5",
 	"minAppVersion": "0.12.0",
-	"description": "Send and publish notes to your Ghost blog with a single click",
+	"description": "Send and publish notes to your Ghost blog with a single click. Supports batch publishing entire folders.",
 	"author": "Southpaw1496",
 	"authorUrl": "https://southpaw1496.me",
 	"isDesktopOnly": true
